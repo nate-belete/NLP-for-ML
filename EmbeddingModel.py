@@ -43,3 +43,14 @@ class EmbeddingModel(object):
                     if j != i:
                         pairs.append((target_word, sequence[j]))
         return pairs
+
+    # Forward run of the embedding model to retrieve embeddings
+    def forward(self, target_ids):
+        # initialize our embedding matrix variable with a random uniform initializer
+        initial_bounds = 0.5 / self.embedding_dim
+        initializer = tf.random.uniform((self.vocab_size, self.embedding_dim), minval=-initial_bounds, maxval=initial_bounds)
+        
+        # create/retrieve the embedding matrix variable, then use it to get embeddings.
+        self.embedding_matrix = tf.compat.v1.get_variable('embedding_matrix',initializer=initializer)
+        embeddings = tf.compat.v1.nn.embedding_lookup(self.embedding_matrix, target_ids)
+        return embeddings
