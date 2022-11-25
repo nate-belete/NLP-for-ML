@@ -62,3 +62,16 @@ class EmbeddingModel(object):
                                      num_negative_samples, self.vocab_size)
         overall_loss = tf.math.reduce_mean(nce_losses)
         return overall_loss
+
+    # Compute cosine similarites between the word's embedding
+    # and all other embeddings for each vocabulary word
+    def compute_cos_sims(self, word, training_texts):
+        self.tokenizer.fit_on_texts(training_texts)
+        word_id = self.tokenizer.word_index[word]
+        word_embedding = self.forward([word_id])
+
+        normalized_embedding = tf.math.l2_normalize(word_embedding)
+        normalized_matrix = tf.math.l2_normalize(self.embedding_matrix, axis=1)
+
+        cos_sims = tf.linalg.matmul(normalized_embedding, normalized_matrix, transpose_b=True)
+        return cos_sims
