@@ -25,3 +25,9 @@ class LanguageModel(object):
             target_sequence = sequence[1:] + padding
 
         return input_sequence, target_sequence
+
+    def make_lstm_cell(self, dropout_keep_prob):
+        cell = tf.keras.layers.LSTMCell(self.num_lstm_units)
+        # include dropout
+        dropout_cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=dropout_keep_prob)
+        return dropout_cell
