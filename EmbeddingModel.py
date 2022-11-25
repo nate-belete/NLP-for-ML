@@ -54,3 +54,11 @@ class EmbeddingModel(object):
         self.embedding_matrix = tf.compat.v1.get_variable('embedding_matrix',initializer=initializer)
         embeddings = tf.compat.v1.nn.embedding_lookup(self.embedding_matrix, target_ids)
         return embeddings
+
+    # Calculate NCE Loss based on the retrieved embedding and context
+    def calculate_loss(self, embeddings, context_ids, num_negative_samples):
+        weights, bias = self.get_bias_weights()
+        nce_losses = tf.nn.nce_loss( weights, bias, context_ids, embeddings, 
+                                     num_negative_samples, self.vocab_size)
+        overall_loss = tf.math.reduce_mean(nce_losses)
+        return overall_loss
