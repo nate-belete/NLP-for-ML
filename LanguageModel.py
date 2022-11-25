@@ -26,8 +26,16 @@ class LanguageModel(object):
 
         return input_sequence, target_sequence
 
+    # Create a cell for the LSTM
     def make_lstm_cell(self, dropout_keep_prob):
         cell = tf.keras.layers.LSTMCell(self.num_lstm_units)
         # include dropout
         dropout_cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=dropout_keep_prob)
         return dropout_cell
+        
+    # Stack multiple layers for the LSTM
+    def stacked_lstm_cells(self, is_training):
+        dropout_keep_prob = 0.5 if is_training else 1.0
+        cell_list = [self.make_lstm_cell(dropout_keep_prob) for i in range(self.num_lstm_layers)]
+        cell = tf.keras.layers.StackedRNNCells(cell_list)
+        return cell
