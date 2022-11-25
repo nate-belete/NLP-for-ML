@@ -75,3 +75,10 @@ class EmbeddingModel(object):
 
         cos_sims = tf.linalg.matmul(normalized_embedding, normalized_matrix, transpose_b=True)
         return cos_sims
+
+    # Compute K-nearest neighbors for input word
+    def k_nearest_neighbors(self, word, k, training_texts):
+        cos_sims = self.compute_cos_sims(word, training_texts)
+        squeezed_cos_sims = tf.squeeze(cos_sims)
+        top_k_output = tf.math.top_k(squeezed_cos_sims, k)
+        return top_k_output
