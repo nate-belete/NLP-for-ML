@@ -60,18 +60,32 @@ class ClassificationModel(object):
         outputs = Bi_rnn(input_embeddings)
 
         return outputs
-        
+
     def get_gather_indices(self, batch_size, sequence_lengths):
         row_indices = tf.range(batch_size)
         final_indexes = tf.cast(sequence_lengths - 1, tf.int32)
         return tf.transpose([row_indices, final_indexes])
 
-    # Calculate logits based on the outputs of the BiLSTM
+    # Calculate the loss for the BiLSTM
     def calculate_logits(self, lstm_outputs, batch_size, sequence_lengths):
-            lstm_outputs_fw = lstm_outputs[0] 
-            lstm_outputs_bw = lstm_outputs[1]
-            combined_outputs = tf.concat([lstm_outputs_fw, lstm_outputs_bw], -1)
-            gather_indices = self.get_gather_indices(batch_size, sequence_lengths)
-            final_outputs = tf.gather_nd(combined_outputs, gather_indices)
-            logits = tf.keras.layers.Dense(1)(final_outputs)
-            return logits
+        lstm_outputs_fw = lstm_outputs[0] 
+        lstm_outputs_bw = lstm_outputs[1]
+        combined_outputs = tf.concat([lstm_outputs_fw, lstm_outputs_bw], -1)
+        gather_indices = self.get_gather_indices(batch_size, sequence_lengths)
+        final_outputs = tf.gather_nd(combined_outputs, gather_indices)
+        logits = tf.keras.layers.Dense(1)(final_outputs)
+        return logits
+
+        # Convert Logits to Predictions
+    def logits_to_predictions(self, logits):
+        probs = tf.math.sigmoid(logits)
+        preds = tf.math.round(probs)
+        return preds
+
+    #calculate LOSS
+    def calculate_loss(self, lstm_outputs, batch_size, sequence_lengths, labels):
+        logits = self.calculate_logits(lstm_outputs, batch_size, sequence_lengths)
+        float_labels = tf.cast(labels, tf.float32)
+        batch_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=float_labels, logits=logits)
+        overall_loss = tf.reduce_sum(batch_loss)
+        return overall_loss
