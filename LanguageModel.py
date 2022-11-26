@@ -56,3 +56,11 @@ class LanguageModel(object):
         unpadded_loss = batch_sequence_loss * tf.cast(binary_sequences, tf.float32)
         overall_loss = tf.math.reduce_sum(unpadded_loss)
         return overall_loss
+
+    # Predict next word ID
+    def get_word_predictions(self, word_preds, binary_sequences, batch_size):
+        row_indices = tf.range(batch_size)
+        final_indexes = tf.math.reduce_sum(binary_sequences, axis=1) - 1
+        gather_indices = tf.transpose([row_indices, final_indexes])
+        final_id_predictions = tf.gather_nd(word_preds, gather_indices)
+        return final_id_predictions
