@@ -25,7 +25,7 @@ class ClassificationModel(object):
                 sequences[i] = sequence[:self.max_length]
         training_pairs = list(zip(sequences, labels))
         return training_pairs
-        
+
     def make_lstm_cell(self, dropout_keep_prob):
         cell = tf.keras.layers.LSTMCell(self.num_lstm_units, dropout=dropout_keep_prob)
         return cell
@@ -53,14 +53,25 @@ class ClassificationModel(object):
         input_embeddings, sequence_lengths = self.get_input_embeddings(input_sequences)
         dropout_keep_prob = 0.5 if is_training else 1.0
         cell = self.make_lstm_cell(dropout_keep_prob)
-        rnn = tf.keras.layers.RNN(cell, return_sequences=True ,
-                go_backwards=True , return_state=True)
+        rnn = tf.keras.layers.RNN(cell, return_sequences=True , go_backwards=True , return_state=True)
         
-        Bi_rnn= tf.keras.layers.Bidirectional(
-              rnn,
-              merge_mode=None
-              )
-        input_embeddings = tf.compat.v1.placeholder(
-                tf.float32, shape=(None, 10, 12))
+        Bi_rnn= tf.keras.layers.Bidirectional(rnn, merge_mode=None )
+        input_embeddings = tf.compat.v1.placeholder( tf.float32, shape=(None, 10, 12))
         outputs = Bi_rnn(input_embeddings)
+
         return outputs
+        
+    def get_gather_indices(self, batch_size, sequence_lengths):
+        row_indices = tf.range(batch_size)
+        final_indexes = tf.cast(sequence_lengths - 1, tf.int32)
+        return tf.transpose([row_indices, final_indexes])
+
+    # Calculate logits based on the outputs of the BiLSTM
+    def calculate_logits(self, lstm_outputs, batch_size, sequence_lengths):
+            lstm_outputs_fw = lstm_outputs[0] 
+            lstm_outputs_bw = lstm_outputs[1]
+            combined_outputs = tf.concat([lstm_outputs_fw, lstm_outputs_bw], -1)
+            gather_indices = self.get_gather_indices(batch_size, sequence_lengths)
+            final_outputs = tf.gather_nd(combined_outputs, gather_indices)
+            logits = tf.keras.layers.Dense(1)(final_outputs)
+            return logits
