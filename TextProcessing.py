@@ -8,7 +8,7 @@ import gensim.downloader as api
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-class DataProcessing():
+class TextProcessing():
     stopwords = nltk.corpus.stopwords.words('english')
     wiki_embeddings = api.load('glove-wiki-gigaword-100')
 
