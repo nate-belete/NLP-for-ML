@@ -55,4 +55,5 @@ class DataProcessing():
                                         window=window,
                                         min_count=min_count)
         return d2v_model.infer_vector(search)
+
         
