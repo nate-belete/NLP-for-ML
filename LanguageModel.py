@@ -32,6 +32,7 @@ class LanguageModel(object):
         )
         input_embeddings = embedding(input_sequences)
         return input_embeddings
+
     # Run the LSTM on the input sequences
     def run_lstm(self, input_sequences, is_training):
         cell = self.stacked_lstm_cells(is_training)
@@ -46,3 +47,12 @@ class LanguageModel(object):
         )
         lstm_outputs = rnn(input_embeddings)
         return lstm_outputs, binary_sequences
+
+    # calculate the loss function 
+    def calculate_loss(self, lstm_outputs, binary_sequences, output_sequences):
+        logits = tf.keras.layers.Dense(self.vocab_size)(lstm_outputs)
+        batch_sequence_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            labels=output_sequences, logits=logits)
+        unpadded_loss = batch_sequence_loss * tf.cast(binary_sequences, tf.float32)
+        overall_loss = tf.math.reduce_sum(unpadded_loss)
+        return overall_loss
