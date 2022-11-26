@@ -1,6 +1,5 @@
 import tensorflow as tf
-
-
+import numpy as np
 
 # LSTM Language Model
 class LanguageModel(object):
@@ -12,30 +11,38 @@ class LanguageModel(object):
         self.num_lstm_layers = num_lstm_layers
         self.tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=vocab_size)
 
-    def get_input_target_sequence(self, sequence):
-        seq_len = len(sequence)
-        if seq_len >= self.max_length:
-            input_sequence = sequence[:self.max_length - 1]
-            target_sequence = sequence[1:self.max_length]
-
-        else:
-            padding_amount = self.max_length - len(sequence)
-            padding = [0] * padding_amount
-            input_sequence = sequence[:-1] + padding
-            target_sequence = sequence[1:] + padding
-
-        return input_sequence, target_sequence
-
     # Create a cell for the LSTM
     def make_lstm_cell(self, dropout_keep_prob):
-        cell = tf.keras.layers.LSTMCell(self.num_lstm_units)
-        # include dropout
-        dropout_cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob=dropout_keep_prob)
-        return dropout_cell
-        
+        cell = tf.keras.layers.LSTMCell(self.num_lstm_units, dropout=dropout_keep_prob)
+        return cell
+
     # Stack multiple layers for the LSTM
     def stacked_lstm_cells(self, is_training):
         dropout_keep_prob = 0.5 if is_training else 1.0
         cell_list = [self.make_lstm_cell(dropout_keep_prob) for i in range(self.num_lstm_layers)]
         cell = tf.keras.layers.StackedRNNCells(cell_list)
-        return cell
+        return cell_list
+
+     # Convert input sequences to embeddings
+    def get_input_embeddings(self, input_sequences):
+        embedding_dim = int(self.vocab_size**0.25)
+        embedding=tf.keras.layers.Embedding(
+            self.vocab_size+1, embedding_dim, embeddings_initializer='uniform',
+            mask_zero=True, input_length=self.max_length
+        )
+        input_embeddings = embedding(input_sequences)
+        return input_embeddings
+    # Run the LSTM on the input sequences
+    def run_lstm(self, input_sequences, is_training):
+        cell = self.stacked_lstm_cells(is_training)
+        input_embeddings = self.get_input_embeddings(input_sequences)
+        binary_sequences = tf.math.sign(input_sequences)
+        sequence_lengths = tf.math.reduce_sum(binary_sequences, axis=1)
+        rnn=tf.keras.layers.RNN(
+            cell,
+            return_sequences=True,
+            input_length=sequence_lengths,
+            dtype=tf.float32
+        )
+        lstm_outputs = rnn(input_embeddings)
+        return lstm_outputs, binary_sequences
