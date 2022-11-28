@@ -75,3 +75,21 @@ class Seq2SeqModel(object):
             combined_state.append(bi_lstm_state)
         final_state = tuple(combined_state)    
         return enc_outputs, input_seq_lens, final_state
+
+    # Helper funtion to combine BiLSTM encoder outputs
+    def combine_enc_outputs(self, enc_outputs):
+        enc_outputs_fw, enc_outputs_bw = enc_outputs
+        return tf.concat([enc_outputs_fw, enc_outputs_bw], -1)
+
+    # Create the stacked LSTM cells for the decoder
+    def create_decoder_cell(self, enc_outputs, input_seq_lens, is_training):
+        num_decode_units = self.num_lstm_units * 2
+        dec_cell = self.stacked_lstm_cells(is_training, num_decode_units)
+        combined_enc_outputs = self.combine_enc_outputs(enc_outputs)
+        attention_mechanism = tfa.seq2seq.LuongAttention(
+            num_decode_units, combined_enc_outputs,
+            memory_sequence_length=input_seq_lens)
+        dec_cell = tfa.seq2seq.AttentionWrapper(
+            dec_cell, attention_mechanism,
+            attention_layer_size=num_decode_units)
+        return dec_cell
