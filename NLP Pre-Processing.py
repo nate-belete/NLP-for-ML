@@ -267,8 +267,6 @@ def norm_lemm_a_func(text):
     text = ' '.join([WordNetLemmatizer().lemmatize(word, pos='a') for word in words])
     return text
 
-
-
 def get_wordnet_pos_func(word):
     '''
     Maps the respective POS tag of a word to the format accepted by the lemmatizer of wordnet
